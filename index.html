@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fichajes Aseminfor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-blue-100 to-purple-200 min-h-screen flex flex-col items-center justify-start py-6 relative">
+  <img src="https://i.postimg.cc/fypXdhsx/Nuevo-LOGO-ASMFR.png" alt="Logo Aseminfor" class="w-40 mb-6" />
+  <div class="absolute top-4 right-4">
+    <button onclick="mostrarPanelAdmin()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded">PANEL ADMINISTRACIÓN</button>
+  </div>
+  <div id="app" class="bg-white shadow-md rounded-lg p-6 w-full max-w-sm">
+    <h2 class="text-xl font-bold text-blue-700 mb-4 text-center">Bienvenido</h2>
+    <input id="codigoEmpleado" type="text" placeholder="Código para fichar" class="w-full p-2 text-center text-xl border border-blue-300 rounded mb-4" />
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <button onclick="addDigit('1')" class="bg-blue-400 text-white py-3 rounded">1</button>
+      <button onclick="addDigit('2')" class="bg-blue-400 text-white py-3 rounded">2</button>
+      <button onclick="addDigit('3')" class="bg-blue-400 text-white py-3 rounded">3</button>
+      <button onclick="addDigit('4')" class="bg-blue-400 text-white py-3 rounded">4</button>
+      <button onclick="addDigit('5')" class="bg-blue-400 text-white py-3 rounded">5</button>
+      <button onclick="addDigit('6')" class="bg-blue-400 text-white py-3 rounded">6</button>
+      <button onclick="addDigit('7')" class="bg-blue-400 text-white py-3 rounded">7</button>
+      <button onclick="addDigit('8')" class="bg-blue-400 text-white py-3 rounded">8</button>
+      <button onclick="addDigit('9')" class="bg-blue-400 text-white py-3 rounded">9</button>
+      <button onclick="addDigit('0')" class="bg-blue-400 text-white py-3 rounded col-span-2">0</button>
+      <button onclick="deleteDigit()" class="bg-red-400 text-white py-3 rounded">⌫</button>
+    </div>
+    <button onclick="fichar()" class="bg-green-500 w-full text-white py-2 rounded">✔ Enviar</button>
+    <div id="respuesta" class="text-green-600 font-semibold mt-2"></div>
+    <div id="reloj" class="text-sm text-gray-600 mt-2"></div>
+    <div class="mt-6 space-y-2 admin-button hidden">
+      <button onclick="mostrarFichajes()" class="w-full bg-blue-400 hover:bg-blue-500 text-white py-2 rounded">Fichajes Aseminfor</button>
+      <button onclick="mostrarAñadirHoras()" class="w-full bg-purple-400 hover:bg-purple-500 text-white py-2 rounded">Añadir Horas</button>
+      <button onclick="mostrarExportarExcel()" class="w-full bg-green-400 hover:bg-green-500 text-white py-2 rounded">Exportar a Excel</button>
+      <button onclick="eliminarHoras()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded">Eliminar Horas</button>
+    </div>
+  </div>
+
+  <!-- MODALES -->
+  <div id="modalFichajes" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md overflow-auto max-h-[80vh]">
+      <input type="date" id="fechaFiltro" class="w-full p-2 border rounded mb-4" onchange="mostrarFichajes()" />
+      <div id="listaFichajes" class="mb-4 space-y-2"></div>
+      <div class="flex justify-end">
+        <button onclick="cerrarModalFichajes()" class="bg-gray-400 text-white px-4 py-2 rounded">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalAñadir" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h3 class="text-lg font-bold mb-4 text-purple-600">Añadir Horas</h3>
+      <input type="text" id="nombreAñadir" placeholder="Nombre del trabajador" class="w-full p-2 border rounded mb-2" />
+      <input type="date" id="fechaAñadir" class="w-full p-2 border rounded mb-2" />
+      <input type="time" step="1" id="horaAñadir" class="w-full p-2 border rounded mb-2" />
+      <div class="flex justify-end space-x-2">
+        <button onclick="guardarAñadir()" class="bg-purple-500 text-white px-4 py-2 rounded">Guardar</button>
+        <button onclick="cerrarModalAñadir()" class="bg-gray-400 text-white px-4 py-2 rounded">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalExportar" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h3 class="text-lg font-bold mb-4 text-green-600">Exportar a Excel</h3>
+      <input type="date" id="fechaDesde" class="w-full p-2 border rounded mb-2" />
+      <input type="date" id="fechaHasta" class="w-full p-2 border rounded mb-2" />
+      <input type="text" id="nombreExportar" placeholder="Nombre del trabajador (opcional)" class="w-full p-2 border rounded mb-4" />
+      <div class="flex justify-end space-x-2">
+        <button onclick="exportarExcel()" class="bg-green-500 text-white px-4 py-2 rounded">Exportar</button>
+        <button onclick="cerrarModalExportar()" class="bg-gray-400 text-white px-4 py-2 rounded">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const empleados = {
+  "52205708": { nombre: "Jeronimo González", rol: "Director" },
+  "44428704": { nombre: "Anabel Corcoba", rol: "RRHH" },
+  "39878159": { nombre: "Ignasi Machuca", rol: "Compras" },
+  "45785006": { nombre: "Jessica Ruiz", rol: "Compras" },
+  "47778121": { nombre: "Raul Lopez", rol: "Compras" },
+  "48535961": { nombre: "Isabel Pastor", rol: "Compras" },
+  "53321561": { nombre: "Alex González", rol: "Marketing" },
+  "44417915": { nombre: "Montse Carmona", rol: "Contabilidad" },
+  "53971355": { nombre: "Miquel González", rol: "Compras" }
+};
+
+let fichajes = JSON.parse(localStorage.getItem('fichajes') || '[]');
+
+function addDigit(d) {
+  document.getElementById('codigoEmpleado').value += d;
+}
+
+function deleteDigit() {
+  let input = document.getElementById('codigoEmpleado');
+  input.value = input.value.slice(0, -1);
+}
+
+function fichar() {
+  const codigo = document.getElementById('codigoEmpleado').value;
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split('T')[0];
+  const hora = ahora.toTimeString().split(' ')[0];
+  if (empleados[codigo]) {
+    const nombre = empleados[codigo].nombre;
+    const rol = empleados[codigo].rol;
+    fichajes.push({ nombre, codigo, fecha, hora });
+    localStorage.setItem('fichajes', JSON.stringify(fichajes));
+    document.getElementById('respuesta').innerText = `✅ ${nombre} ha fichado correctamente.`;
+    if (rol === "RRHH" || rol === "Director") {
+      document.querySelectorAll('.admin-button').forEach(btn => btn.classList.remove('hidden'));
+    }
+  } else {
+    document.getElementById('respuesta').innerText = '❌ Código inválido.';
+  }
+  document.getElementById('codigoEmpleado').value = '';
+}
+
+function mostrarPanelAdmin() {
+  const codigo = prompt("Introduce tu código de empleado para acceder al panel");
+  if (empleados[codigo] && (empleados[codigo].rol === "RRHH" || empleados[codigo].rol === "Director")) {
+    document.querySelectorAll(".admin-button").forEach(btn => btn.classList.remove("hidden"));
+  } else {
+    alert("❌ Acceso denegado. Solo RRHH o Director.");
+  }
+}
+
+function mostrarFichajes() {
+  const fechaSeleccionada = document.getElementById('fechaFiltro').value;
+  const lista = document.getElementById('listaFichajes');
+  lista.innerHTML = '';
+
+  const indices = [];
+  fichajes.forEach((f, i) => {
+    if (f.fecha === fechaSeleccionada) {
+      indices.push(i);
+    }
+  });
+
+  indices.forEach(idx => {
+    const f = fichajes[idx];
+    lista.innerHTML += `
+      <div class="flex justify-between items-center bg-gray-100 p-2 rounded">
+        <span>${f.nombre} - ${f.fecha} - ${f.hora}</span>
+        <button onclick="editarFichaje(${idx})" class="bg-pink-500 text-white px-2 py-1 rounded">EDITAR</button>
+      </div>`;
+  });
+
+  document.getElementById('modalFichajes').classList.remove('hidden');
+}
+
+function cerrarModalFichajes() {
+  document.getElementById('modalFichajes').classList.add('hidden');
+}
+
+function editarFichaje(idx) {
+  const nuevoTiempo = prompt("Introduce nueva hora (HH:MM:SS)", fichajes[idx].hora);
+  if (nuevoTiempo && /^\d{2}:\d{2}:\d{2}$/.test(nuevoTiempo)) {
+    fichajes[idx].hora = nuevoTiempo;
+    localStorage.setItem('fichajes', JSON.stringify(fichajes));
+    mostrarFichajes();
+  } else {
+    alert('❌ Formato incorrecto. Usa HH:MM:SS.');
+  }
+}
+
+function mostrarAñadirHoras() {
+  document.getElementById('modalAñadir').classList.remove('hidden');
+}
+
+function cerrarModalAñadir() {
+  document.getElementById('modalAñadir').classList.add('hidden');
+}
+
+function guardarAñadir() {
+  const nombreBuscar = document.getElementById('nombreAñadir').value.trim().toLowerCase();
+  const fecha = document.getElementById('fechaAñadir').value;
+  const hora = document.getElementById('horaAñadir').value;
+
+  if (!nombreBuscar || !fecha || !hora) {
+    alert("Rellena todos los campos correctamente.");
+    return;
+  }
+
+  // Buscar empleados cuyo nombre coincida exactamente (caso insensible)
+  const empleadosEncontrados = Object.entries(empleados).filter(([codigo, emp]) => emp.nombre.toLowerCase() === nombreBuscar);
+
+  if (empleadosEncontrados.length === 0) {
+    alert("No se encontró ningún trabajador con ese nombre exacto.");
+    return;
+  } else if (empleadosEncontrados.length > 1) {
+    alert("Se encontraron varios trabajadores con ese nombre, por favor especifica mejor.");
+    return;
+  }
+
+  const [codigo, empleado] = empleadosEncontrados[0];
+
+  fichajes.push({ nombre: empleado.nombre, codigo, fecha, hora });
+  localStorage.setItem('fichajes', JSON.stringify(fichajes));
+  cerrarModalAñadir();
+}
+
+function mostrarExportarExcel() {
+  document.getElementById('modalExportar').classList.remove('hidden');
+}
+
+function cerrarModalExportar() {
+  document.getElementById('modalExportar').classList.add('hidden');
+}
+
+function calcularHoras(horaInicio, horaFin) {
+  const [h1, m1, s1] = horaInicio.split(':').map(Number);
+  const [h2, m2, s2] = horaFin.split(':').map(Number);
+  const inicio = new Date(0,0,0,h1,m1,s1);
+  const fin = new Date(0,0,0,h2,m2,s2);
+  let diffMs = fin - inicio;
+  if(diffMs < 0) diffMs += 24*3600000;
+  return diffMs / (1000*60*60);
+}
+
+function generarResumenParaExportar(fichajesFiltrados) {
+  const agrupado = {};
+  fichajesFiltrados.forEach(f => {
+    const key = f.codigo + '|' + f.fecha;
+    if(!agrupado[key]) {
+      agrupado[key] = {
+        nombre: f.nombre,
+        codigo: f.codigo,
+        fecha: f.fecha,
+        horas: []
+      };
+    }
+    agrupado[key].horas.push(f.hora);
+  });
+
+  const resultado = [];
+  for(const key in agrupado) {
+    const item = agrupado[key];
+    item.horas.sort();
+    const entrada1 = item.horas[0] || '';
+    const salida1 = item.horas[1] || '';
+    const entrada2 = item.horas[2] || '';
+    const salida2 = item.horas[3] || '';
+    let totalHoras = 0;
+    if(entrada1 && salida1) totalHoras += calcularHoras(entrada1, salida1);
+    if(entrada2 && salida2) totalHoras += calcularHoras(entrada2, salida2);
+
+    resultado.push({
+      Nombre: item.nombre,
+      Codigo: item.codigo,
+      Fecha: item.fecha,
+      "Entrada 1": entrada1,
+      "Salida 1": salida1,
+      "Entrada 2": entrada2,
+      "Salida 2": salida2,
+      "Total horas trabajadas": totalHoras.toFixed(2)
+    });
+  }
+  return resultado;
+}
+
+function exportarExcel() {
+  const desde = document.getElementById('fechaDesde').value;
+  const hasta = document.getElementById('fechaHasta').value;
+  const nombreFiltro = document.getElementById('nombreExportar').value.trim().toLowerCase();
+
+  let datosFiltrados = fichajes.filter(f => f.fecha >= desde && f.fecha <= hasta);
+  if (nombreFiltro) {
+    datosFiltrados = datosFiltrados.filter(f => f.nombre.toLowerCase().includes(nombreFiltro));
+  }
+
+  const resumen = generarResumenParaExportar(datosFiltrados);
+
+  const ws = XLSX.utils.json_to_sheet(resumen);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Resumen Fichajes");
+  XLSX.writeFile(wb, "resumen_fichajes.xlsx");
+
+  cerrarModalExportar();
+}
+
+// Función eliminar horas con búsqueda por nombre y fecha
+function eliminarHoras() {
+  const nombreBuscado = prompt("Introduce el nombre completo o parcial del trabajador:");
+  if (!nombreBuscado) {
+    alert("Debe introducir un nombre.");
+    return;
+  }
+
+  if (nombreBuscado.length < 3) {
+    alert("Por favor introduce al menos 3 caracteres.");
+    return;
+  }
+
+  const coincidencias = Object.entries(empleados)
+    .filter(([codigo, emp]) => emp.nombre.toLowerCase().includes(nombreBuscado.toLowerCase()));
+
+  if (coincidencias.length === 0) {
+    alert("No se encontró ningún trabajador con ese nombre.");
+    return;
+  } else if (coincidencias.length > 1) {
+    let listaNombres = coincidencias.map(c => c[1].nombre).join(", ");
+    alert(`Se encontraron varios trabajadores que coinciden: ${listaNombres}. Por favor, especifica mejor.`);
+    return;
+  }
+
+  const [codigoEmpleado, empleado] = coincidencias[0];
+  crearModalEliminarHoras(codigoEmpleado, empleado.nombre);
+}
+
+function crearModalEliminarHoras(codigoEmpleado, nombreEmpleado) {
+  let modalElim = document.getElementById('modalEliminarHoras');
+  if (!modalElim) {
+    modalElim = document.createElement('div');
+    modalElim.id = 'modalEliminarHoras';
+    modalElim.className = 'fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50';
+    modalElim.innerHTML = `
+      <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-auto">
+        <h3 class="text-xl font-bold mb-4 text-red-600 text-center">Eliminar Horas - ${nombreEmpleado}</h3>
+        <label for="fechaEliminar" class="block font-semibold mb-2">Selecciona el día:</label>
+        <input type="date" id="fechaEliminar" class="w-full p-2 border rounded mb-4" />
+        <div id="listaHorasEliminar" class="space-y-2"></div>
+        <div class="flex justify-end mt-4">
+          <button id="cerrarModalEliminar" class="bg-gray-400 text-white px-4 py-2 rounded mr-2">Cancelar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modalElim);
+
+    document.getElementById('cerrarModalEliminar').onclick = () => {
+      modalElim.remove();
+    };
+  }
+
+  const inputFecha = document.getElementById('fechaEliminar');
+  const contenedorHoras = document.getElementById('listaHorasEliminar');
+
+  inputFecha.value = '';
+  contenedorHoras.innerHTML = '';
+
+  inputFecha.onchange = () => {
+    const fechaSel = inputFecha.value;
+    if (!fechaSel) {
+      contenedorHoras.innerHTML = '';
+      return;
+    }
+
+    const fichasDia = fichajes
+      .map((f, i) => ({ ...f, idx: i }))
+      .filter(f => f.codigo === codigoEmpleado && f.fecha === fechaSel);
+
+    if (fichasDia.length === 0) {
+      contenedorHoras.innerHTML = '<p class="text-center text-gray-600">No hay fichajes para ese día.</p>';
+      return;
+    }
+
+    contenedorHoras.innerHTML = '';
+    fichasDia.forEach(f => {
+      const divHora = document.createElement('div');
+      divHora.className = 'flex justify-between items-center bg-gray-100 p-2 rounded';
+
+      const spanHora = document.createElement('span');
+      spanHora.textContent = f.hora;
+
+      const btnEliminar = document.createElement('button');
+      btnEliminar.textContent = 'Eliminar';
+      btnEliminar.className = 'bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded';
+      btnEliminar.onclick = () => {
+        if (confirm(`¿Eliminar fichaje a las ${f.hora} del día ${f.fecha}?`)) {
+          fichajes.splice(f.idx, 1);
+          localStorage.setItem('fichajes', JSON.stringify(fichajes));
+          alert('Fichaje eliminado.');
+
+          // Refrescar lista de horas
+          inputFecha.onchange();
+        }
+      };
+
+      divHora.appendChild(spanHora);
+      divHora.appendChild(btnEliminar);
+      contenedorHoras.appendChild(divHora);
+    });
+  };
+}
+
+setInterval(() => {
+  const ahora = new Date();
+  document.getElementById('reloj').innerText = ahora.toLocaleString('es-ES');
+}, 1000);
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('codigoEmpleado').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') fichar();
+  });
+});
+</script>
+</body>
+</html>
